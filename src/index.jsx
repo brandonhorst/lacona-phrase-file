@@ -1,5 +1,5 @@
 /** @jsx createElement */
-import {createElement, Phrase} from 'lacona-phrase'
+import {createElement, Phrase, Source} from 'lacona-phrase'
 import {resolve} from 'path'
 import fs from 'fs'
 import thenify from 'thenify'
@@ -11,18 +11,14 @@ function getUserHome() {
   return process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME']
 }
 
-class FileSystem extends Source {
+class Directory extends Source {
   onCreate () {
     this.replaceData({})
-  }
 
-  readDir (dir) {
-    if (this.data[dir]) return
+    if (this.props.directory == null) return
 
-    this.setData({[dir]: {}})
-
-    readdir(dir).then(files => {
-      const statPromises = _.map(files, file => Promise.all([file, stat(resolve(dir, file))]))
+    readdir(this.props.directory).then(files => {
+      const statPromises = _.map(files, file => Promise.all([file, stat(resolve(this.props.directory, file))]))
       return Promise.all(statPromises)
     }).then(stats => {
       return _.chain(stats)
@@ -30,34 +26,49 @@ class FileSystem extends Source {
         .mapValues(stat => {isDir: stat[1]})
         .value()
     }).then(files => {
-      this.setData({[dir]: files})
+      this.replaceData(files)
     })
   }
 }
 
-export default class File extends Phrase {
+class TrueFile extends Phrase {
   describe () {
     if (this.props.directory == null) {
       return (
         <choice>
           <sequence>
             <literal text='/' />
-            <File directory='/' />
+            <TrueFile directory='/' />
           </sequence>
           <sequence>
             <literal text='~/' />
-            <File directory={getUserHome()} />
+            <TrueFile directory={getUserHome()} />
           </sequence>
         </choice>
       )
     } else {
+      const fileItems = this.files.map(({isDir}, file) => {
+        const val = isDir ? `${file}/` : file
+        return {text: val, value: val}
+      })
+      return <list items={fileItems} fuzzy={true} />
     }
   }
 
   source () {
     return {
-      files: <FileSystem />
+      files: <Directory directory={this.props.directory} />
     }
+  }
+}
+
+export default class File extends Phrase {
+  describe () {
+    return (
+      <placeholder descriptor='file'>
+        <TrueFile />
+      </placeholder>
+    )
   }
 }
 
