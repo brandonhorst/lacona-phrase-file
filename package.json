@@ -30,13 +30,13 @@
   "devDependencies": {
     "babel": "^5.8.29",
     "chai": "^3.4.0",
-    "lacona": "^0.28.0",
+    "lacona": "^0.35.0",
     "lacona-util-fulltext": "^0.2.0",
     "mocha": "^2.3.3",
     "rimraf": "^2.4.3"
   },
   "dependencies": {
-    "lacona-phrase": "^0.7.0",
+    "lacona-phrase": "^0.9.1",
     "lodash": "^3.10.1"
   }
 }
